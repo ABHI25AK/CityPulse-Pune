@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CityPulse Pune - Explore smarter, travel safer, and experience Pune better with interactive maps, live weather, safety zones, citizen reports, and smart day planning.">
+  <title>CityPulse Pune — Smart City Exploration & Safety Guide</title>
+
+  <!-- Leaflet CDN CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header Banner -->
+  <header class="app-header" role="banner">
+    <div class="header-container">
+      <div class="brand-block">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">CityPulse Pune</h1>
+          <p class="brand-tagline">Explore smarter. Travel safer. Experience Pune better.</p>
+        </div>
+      </div>
+
+      <!-- Live Weather Widget -->
+      <div class="weather-widget" id="weatherWidget" role="region" aria-label="Live Pune Weather" aria-live="polite">
+        <div class="weather-loading" id="weatherLoading">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Checking Pune skies...</span>
+        </div>
+        <div class="weather-content hidden" id="weatherContent">
+          <div class="weather-temp-group">
+            <span class="weather-icon" id="weatherIcon" aria-hidden="true">☀️</span>
+            <div>
+              <div class="weather-temp" id="weatherTemp">--°C</div>
+              <div class="weather-sub" id="weatherMeta">Pune Live</div>
+            </div>
+          </div>
+          <div class="weather-alert-badge" id="weatherAlertBadge" role="status">
+            Good time to explore
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-bar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <button class="nav-tab active" data-tab="explore" id="tabBtnExplore" role="tab" aria-selected="true" aria-controls="viewExplore">
+        <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+        <span>Explore</span>
+      </button>
+      <button class="nav-tab" data-tab="compare" id="tabBtnCompare" role="tab" aria-selected="false" aria-controls="viewCompare">
+        <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Compare</span>
+      </button>
+      <button class="nav-tab" data-tab="safety" id="tabBtnSafety" role="tab" aria-selected="false" aria-controls="viewSafety">
+        <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Safety</span>
+      </button>
+      <button class="nav-tab" data-tab="reports" id="tabBtnReports" role="tab" aria-selected="false" aria-controls="viewReports">
+        <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Reports</span>
+      </button>
+      <button class="nav-tab" data-tab="plan" id="tabBtnPlan" role="tab" aria-selected="false" aria-controls="viewPlan">
+        <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg>
+        <span>Plan My Day</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Global Demo Data Banner Notice -->
+  <div class="demo-notice-bar" role="note">
+    <span>ℹ️ <strong>Demo Data Notice:</strong> Safety scores, traffic conditions, accident zones, and cleanliness metrics shown across this prototype are simulated sample values for hackathon showcase purposes.</span>
+  </div>
+
+  <!-- Social Media City Pulse Ticker (Twitter/X & Crowdsourced Social Insights) -->
+  <aside class="social-pulse-ticker-bar" aria-label="Live Social Media City Pulse">
+    <div class="ticker-inner-wrap">
+      <div class="ticker-badge">
+        <span class="pulse-dot" aria-hidden="true"></span>
+        <span>📱 Social Pulse</span>
+      </div>
+      <div class="ticker-track-container" id="socialTickerTrack" role="marquee" aria-live="off">
+        <span class="ticker-item"><strong class="tag-hash">#PuneTraffic:</strong> Heavy vehicle slowdown near Swargate flyover &bull; <em>14m ago</em></span>
+        <span class="ticker-item"><strong class="tag-hash">#PuneRains:</strong> Light monsoon drizzle reported around Sinhagad Ghat &bull; <em>28m ago</em></span>
+        <span class="ticker-item"><strong class="tag-hash">#FCroad:</strong> Evening student rush at Vaishali & Goodluck Cafe &bull; <em>42m ago</em></span>
+        <span class="ticker-item"><strong class="tag-hash">#PMCAlert:</strong> Road resurfacing completed near JM Road corner &bull; <em>1h ago</em></span>
+      </div>
+      <button type="button" class="ticker-expand-btn" id="toggleSocialModalBtn" title="View all social media posts">
+        <span>View Social Feed ↗</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Container -->
+  <main class="main-content" id="mainContent">
+
+    <!-- ==============================================
+         TAB 1: EXPLORE
+    =============================================== -->
+    <section class="tab-pane active" id="viewExplore" role="tabpanel" aria-labelledby="tabBtnExplore">
+      <div class="explore-layout">
+        <!-- Controls & Sidebar Area -->
+        <aside class="explore-sidebar" aria-label="Explore Filters and Places">
+          <div class="filter-panel card">
+            <h2 class="section-title">Discover Pune</h2>
+            
+            <!-- Search Input -->
+            <div class="form-group">
+              <label for="searchInput" class="form-label">Search places or landmarks</label>
+              <div class="input-with-icon">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="searchInput" class="form-control" placeholder="e.g. Shaniwar Wada, Vaishali, Fort...">
+              </div>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="form-group">
+              <span class="form-label">Category Filter</span>
+              <div class="category-pills" id="categoryPills" role="radiogroup" aria-label="Filter by Category">
+                <button type="button" class="pill-btn active" data-category="all" role="radio" aria-checked="true">All</button>
+                <button type="button" class="pill-btn" data-category="food" role="radio" aria-checked="false">Food</button>
+                <button type="button" class="pill-btn" data-category="hotels" role="radio" aria-checked="false">Hotels</button>
+                <button type="button" class="pill-btn" data-category="heritage" role="radio" aria-checked="false">Heritage</button>
+                <button type="button" class="pill-btn" data-category="attractions" role="radio" aria-checked="false">Attractions</button>
+                <button type="button" class="pill-btn" data-category="safety" role="radio" aria-checked="false">Safety Zones</button>
+              </div>
+            </div>
+
+            <!-- Budget Filter Slider -->
+            <div class="form-group">
+              <div class="budget-label-row">
+                <label for="budgetSlider" class="form-label">Max Budget (INR per person)</label>
+                <span class="budget-display" id="budgetDisplay">Any (₹15,000)</span>
+              </div>
+              <input type="range" id="budgetSlider" class="range-slider" min="0" max="15000" step="100" value="15000" aria-label="Maximum budget in Indian Rupees">
+              <div class="budget-range-hints">
+                <span>₹0 (Free)</span>
+                <span>₹500</span>
+                <span>₹2,500</span>
+                <span>₹15,000+</span>
+              </div>
+            </div>
+            
+            <div class="filter-summary">
+              <span id="placesFoundCount">Showing all places</span>
+              <button type="button" class="btn-text" id="resetFiltersBtn">Reset filters</button>
+            </div>
+          </div>
+
+          <!-- Places Listing List -->
+          <div class="places-list-container" id="placesListContainer" role="region" aria-label="Places directory" aria-live="polite">
+            <!-- Dynamically populated -->
+          </div>
+        </aside>
+
+        <!-- Map & Detailed Card Area -->
+        <div class="explore-map-column">
+          <!-- Interactive Map Container -->
+          <div class="map-wrapper card">
+            <div class="map-header">
+              <div class="map-title-group">
+                <h2 class="map-heading">City Live Map</h2>
+                <span class="map-sub">Click markers to inspect Pune hotspots</span>
+              </div>
+              <!-- Marker Legend -->
+              <div class="marker-legend" aria-label="Map Marker Color Legend">
+                <span class="legend-chip"><span class="chip-dot dot-heritage"></span>Heritage (Red)</span>
+                <span class="legend-chip"><span class="chip-dot dot-food"></span>Food (Orange)</span>
+                <span class="legend-chip"><span class="chip-dot dot-hotels"></span>Hotels (Purple)</span>
+                <span class="legend-chip"><span class="chip-dot dot-attractions"></span>Attractions (Blue)</span>
+                <span class="legend-chip"><span class="chip-dot dot-safety"></span>Safety Zones (Dark Red)</span>
+              </div>
+            </div>
+            
+            <div id="exploreMap" class="leaflet-map-canvas" role="application" aria-label="Interactive Map of Pune"></div>
+          </div>
+
+          <!-- Place Detail Card Container -->
+          <div class="place-detail-wrapper card" id="placeDetailCard" role="region" aria-label="Selected Place Details">
+            <div class="detail-placeholder" id="detailPlaceholder">
+              <div class="placeholder-icon" aria-hidden="true">📍</div>
+              <h3>Select a place to view comprehensive details</h3>
+              <p>Click on any place card from the list or a colored marker on the map to view scores, accessibility, price insights, and safety overview.</p>
+            </div>
+            <div class="detail-actual hidden" id="detailActual">
+              <!-- Dynamically rendered detailed card -->
+            </div>
+          </div>
+
+          <!-- Pune Cultural Traditions & City Rhythm Guide -->
+          <div class="culture-guide-card card" id="cultureGuideCard">
+            <div class="culture-card-header">
+              <div class="culture-icon-wrap" aria-hidden="true">🚩</div>
+              <div>
+                <h3 class="culture-card-title">Pune Culture, Traditions & Daily Rhythm</h3>
+                <p class="culture-card-sub">Local customs, authentic food rituals, and Peshwa-era heritage hacks to navigate the city like a true Punekar.</p>
+              </div>
+            </div>
+
+            <div class="culture-pills-grid">
+              <div class="culture-item-box">
+                <div class="culture-item-head">
+                  <span class="culture-badge">⏰ Daily Siesta</span>
+                  <strong>1 PM to 4 PM Afternoon Rhythm</strong>
+                </div>
+                <p class="culture-item-desc">Traditional core Peth markets (Laxmi Road, Tulshibaug) close for afternoon siesta. Schedule indoor museum visits or cafe sessions during these hours!</p>
+              </div>
+
+              <div class="culture-item-box">
+                <div class="culture-item-head">
+                  <span class="culture-badge">☕ Food Traditions</span>
+                  <strong>SPDP, Misal & Irani Chai Walks</strong>
+                </div>
+                <p class="culture-item-desc">Try Shev Batata Dahi Puri (SPDP) at Vaishali, bun maska at Vohuman Cafe, and fiery Puneri Misal at Deccan Gymkhana before noon.</p>
+              </div>
+
+              <div class="culture-item-box">
+                <div class="culture-item-head">
+                  <span class="culture-badge">🏛️ Heritage Norms</span>
+                  <strong>Peshwa Wadas & Monsoon Treks</strong>
+                </div>
+                <p class="culture-item-desc">Early mornings are sacred for Sinhagad Fort hill climbs and Pataleshwar Cave visits. Carry grip footwear during wet monsoon descents.</p>
+              </div>
+
+              <div class="culture-item-box">
+                <div class="culture-item-head">
+                  <span class="culture-badge">🎭 Festival Pulse</span>
+                  <strong>Ganeshotsav & Dhol-Tasha Corridors</strong>
+                </div>
+                <p class="culture-item-desc">Home of the Sarvajanik Ganeshotsav started by Lokmanya Tilak. Manache Ganpati shrines along Appa Balwant Chowk form the historical heart of Pune.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         TAB 2: COMPARE
+    =============================================== -->
+    <section class="tab-pane" id="viewCompare" role="tabpanel" aria-labelledby="tabBtnCompare">
+      <div class="compare-view-container">
+        <div class="compare-header card">
+          <div class="compare-title-row">
+            <div>
+              <h2 class="section-title">Head-to-Head Place Comparison</h2>
+              <p class="section-subtitle">Select between 2 and 3 places to evaluate metrics side by side. Spot best-in-class scores and budget-friendly choices immediately.</p>
+            </div>
+            <div class="compare-actions">
+              <span class="selection-pill" id="compareSelectionCount">0 of 3 selected</span>
+              <button type="button" class="btn btn-outline" id="clearCompareBtn">Clear Selection</button>
+            </div>
+          </div>
+
+          <!-- Selectable Place Chips -->
+          <div class="compare-selector-grid" id="compareSelectorGrid">
+            <!-- Dynamically populated selectable cards -->
+          </div>
+        </div>
+
+        <!-- Comparison Results Area -->
+        <div class="compare-result-card card" id="compareResultCard">
+          <!-- Dynamic: Empty state or Table -->
+        </div>
+
+        <!-- Insights Summary: Best Overall and Avoid Zones -->
+        <div class="compare-insights-grid">
+          <!-- Best Places Overall -->
+          <div class="card insight-card">
+            <div class="insight-header">
+              <span class="insight-badge badge-green">Top Ranked</span>
+              <h3 class="insight-title">Best Places Overall (Pune Composite Score)</h3>
+            </div>
+            <p class="insight-desc">Composite ranking calculated across Rating, Safety, Cleanliness, Affordability, and Accessibility metrics.</p>
+            <div class="best-places-list" id="bestPlacesList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Places to Avoid or Review -->
+          <div class="card insight-card">
+            <div class="insight-header">
+              <span class="insight-badge badge-red">Caution Zones</span>
+              <h3 class="insight-title">Zones to Avoid or Review</h3>
+            </div>
+            <p class="insight-desc">Sample accident-prone junctions or heavy bottlenecks requiring heightened caution. <em>Demo safety data only.</em></p>
+            <div class="avoid-places-list" id="avoidPlacesList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         TAB 3: SAFETY
+    =============================================== -->
+    <section class="tab-pane" id="viewSafety" role="tabpanel" aria-labelledby="tabBtnSafety">
+      <div class="safety-view-layout">
+        <!-- Safety Left Column: Map with Circles & Route Helper -->
+        <div class="safety-left-col">
+          <div class="card safety-helper-card">
+            <div class="helper-heading-row">
+              <div class="helper-icon-wrap" aria-hidden="true">🛡️</div>
+              <div>
+                <h2 class="section-title">Safer Route Helper (Awareness Tool)</h2>
+                <p class="section-subtitle">Check straight-line proximity to sample congested or accident-prone zones before you depart.</p>
+              </div>
+            </div>
+
+            <div class="route-helper-form">
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="routeOriginSelect" class="form-label">Starting Location</label>
+                  <select id="routeOriginSelect" class="form-control" aria-label="Select start location">
+                    <option value="">Select origin...</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="routeDestSelect" class="form-label">Destination Location</label>
+                  <select id="routeDestSelect" class="form-control" aria-label="Select destination location">
+                    <option value="">Select destination...</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="route-buttons-row">
+                <button type="button" class="btn btn-primary" id="checkRouteBtn">
+                  <span>Check Safer Route</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </button>
+                <button type="button" class="btn btn-outline" id="clearRouteBtn">Clear Route</button>
+              </div>
+
+              <!-- Route Result Banner -->
+              <div class="route-result-banner hidden" id="routeResultBanner" role="status" aria-live="polite">
+                <!-- Dynamically injected message -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety Map Canvas -->
+          <div class="card safety-map-wrapper">
+            <div class="map-header">
+              <div class="map-title-group">
+                <h3 class="map-heading">Pune Safety Overlay Map</h3>
+                <span class="map-sub">Red circular zones mark sample cautionary junctions</span>
+              </div>
+              <div class="safety-legend-bar">
+                <span class="legend-chip"><span class="chip-dot dot-safety-circle"></span>Cautionary Zone (1.2 km radius)</span>
+                <span class="legend-chip"><span class="chip-dot dot-route-line"></span>Straight-line trajectory</span>
+              </div>
+            </div>
+            <div id="safetyMap" class="leaflet-map-canvas" role="application" aria-label="Safety overlay map of Pune"></div>
+          </div>
+        </div>
+
+        <!-- Safety Right Column: Guidance, Disclaimer, Safety Tips -->
+        <div class="safety-right-col">
+          <!-- Important Disclaimer Card -->
+          <div class="card alert-card warning-banner">
+            <div class="alert-icon" aria-hidden="true">⚠️</div>
+            <div class="alert-body">
+              <h3 class="alert-title">Demo Safety Data Disclaimer</h3>
+              <p>Safety indices, red buffer circles, and route proximity checks represent <strong>simulated hackathon demonstration data</strong>. This tool is an awareness prototype and <strong>does NOT provide official turn-by-turn navigation, real-time law enforcement feeds, or emergency dispatch guidance</strong>. For emergencies, contact Pune Police at 112.</p>
+            </div>
+          </div>
+
+          <!-- Pune Safety Tips Card -->
+          <div class="card safety-tips-card">
+            <h3 class="section-title">Pune City Navigational & Safety Tips</h3>
+            <ul class="safety-tips-list">
+              <li>
+                <div class="tip-num">1</div>
+                <div>
+                  <strong>Monsoon Hill Safety (Sinhagad / Ghats):</strong>
+                  <p>Check regional landslide alerts and carry grip shoes during intense monsoon showers (July–Sept). Return before darkness sets over the fort paths.</p>
+                </div>
+              </li>
+              <li>
+                <div class="tip-num">2</div>
+                <div>
+                  <strong>Major Junction Vigilance (Swargate & Yerawada):</strong>
+                  <p>Pedestrian crossovers at Swargate and Yerawada experience intense PMT/BRTS bus density. Always use designated pedestrian subways or signaled flyover crossings.</p>
+                </div>
+              </li>
+              <li>
+                <div class="tip-num">3</div>
+                <div>
+                  <strong>Verified Late-Night Transit:</strong>
+                  <p>For late travel, rely on Pune Metro feeder corridors or GPS-tracked rideshares (Ola/Uber) rather than unmetered private autos.</p>
+                </div>
+              </li>
+              <li>
+                <div class="tip-num">4</div>
+                <div>
+                  <strong>Emergency Hotlines (Pune):</strong>
+                  <p>Police: <strong>112 / 100</strong> | Fire: <strong>101</strong> | Ambulance: <strong>108</strong> | Women’s Helpline: <strong>1091</strong> | Pune Traffic Police WhatsApp: <strong>8454959999</strong>.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         TAB 4: REPORTS
+    =============================================== -->
+    <section class="tab-pane" id="viewReports" role="tabpanel" aria-labelledby="tabBtnReports">
+      <div class="reports-view-layout">
+        <!-- Report Submission Form Card -->
+        <div class="card report-form-card">
+          <div class="form-card-header">
+            <h2 class="section-title">Submit Citizen Safety Report</h2>
+            <p class="section-subtitle">Crowdsource local observations to alert fellow Punekars about road hazards, potholes, or sanitation issues.</p>
+          </div>
+
+          <form id="citizenReportForm" novalidate>
+            <!-- Report Type -->
+            <div class="form-group">
+              <label for="reportTypeSelect" class="form-label">Report Category *</label>
+              <select id="reportTypeSelect" class="form-control" required>
+                <option value="">Select issue category...</option>
+                <option value="Unsafe area">🚨 Unsafe Area / Poor Lighting</option>
+                <option value="Accident">💥 Accident Hazard / Blindspot</option>
+                <option value="Traffic">🚗 Severe Traffic Gridlock / Bottleneck</option>
+                <option value="Cleanliness">🗑️ Cleanliness / Garbage Accumulation</option>
+              </select>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label for="reportDescInput" class="form-label">Description of Issue *</label>
+              <textarea id="reportDescInput" class="form-control" rows="3" placeholder="Describe specific details, landmark, or hazard conditions..." required></textarea>
+            </div>
+
+            <!-- Multimodal: Photo Upload & Voice Note -->
+            <div class="multimodal-inputs-grid">
+              <!-- Photo Upload Control -->
+              <div class="form-group multimodal-box">
+                <label class="form-label">📸 Attach Photo (Pothole / Hazard)</label>
+                <div class="file-upload-dropzone" id="photoDropzone">
+                  <input type="file" id="reportPhotoInput" accept="image/*" class="file-input-hidden" aria-label="Upload hazard photo">
+                  <button type="button" class="btn btn-outline btn-sm upload-trigger-btn" id="uploadPhotoBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Choose Photo / Camera</span>
+                  </button>
+                  <span class="upload-hint-text" id="photoNameHint">No photo attached</span>
+                </div>
+                <!-- Image Preview Box -->
+                <div class="photo-preview-wrap hidden" id="photoPreviewWrap">
+                  <img id="photoPreviewImg" src="" alt="Hazard preview thumbnail">
+                  <button type="button" class="remove-media-btn" id="removePhotoBtn" title="Remove photo">&times;</button>
+                </div>
+              </div>
+
+              <!-- Voice Note Recorder Control -->
+              <div class="form-group multimodal-box">
+                <label class="form-label">🎙️ Record Voice Note (Audio Alert)</label>
+                <div class="voice-recorder-panel" id="voiceRecorderPanel">
+                  <div class="recorder-controls-row">
+                    <button type="button" class="btn btn-outline btn-sm" id="recordVoiceBtn">
+                      <span class="mic-icon" aria-hidden="true">🎙️</span>
+                      <span id="recordBtnLabel">Start Recording</span>
+                    </button>
+                    <span class="recording-timer hidden" id="recordingTimer">00:00</span>
+                    <span class="recording-pulse hidden" id="recordingPulse"></span>
+                  </div>
+                  <!-- Audio Preview Player -->
+                  <div class="audio-preview-wrap hidden" id="audioPreviewWrap">
+                    <audio id="audioPlayback" controls class="report-audio-player"></audio>
+                    <button type="button" class="remove-media-btn" id="removeAudioBtn" title="Remove voice note">&times;</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Map Location Picker -->
+            <div class="form-group">
+              <div class="location-picker-header">
+                <span class="form-label">Pin Location on Map *</span>
+                <span class="location-status-badge" id="reportLocationBadge">📍 Tap the map to set pin</span>
+              </div>
+              <p class="form-hint">Click anywhere on the Pune map below to set the exact latitude & longitude for your report.</p>
+              
+              <!-- Report Leaflet Map Canvas -->
+              <div id="reportMap" class="leaflet-map-canvas report-map-canvas" role="application" aria-label="Map to pick report location"></div>
+              
+              <div class="coord-display-box" id="coordDisplayBox">
+                <span>Selected Coordinates:</span>
+                <strong id="selectedCoordsText">None chosen yet</strong>
+              </div>
+            </div>
+
+            <div class="form-actions-row">
+              <button type="submit" class="btn btn-primary" id="submitReportBtn">
+                <span>Submit Citizen Report</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+              <button type="button" class="btn btn-outline" id="resetReportFormBtn">Clear</button>
+            </div>
+
+            <!-- Form submission status alert -->
+            <div class="form-alert hidden" id="reportFormAlert" role="alert"></div>
+          </form>
+        </div>
+
+        <!-- Saved Reports Feed Column -->
+        <div class="reports-feed-column">
+          <div class="card reports-feed-header-card">
+            <div class="feed-title-row">
+              <div>
+                <h3 class="section-title">Submitted Community Reports</h3>
+                <p class="section-subtitle">Real-time local alerts stored in your browser's persistent localStorage.</p>
+              </div>
+              <div class="reports-counter-pill" id="reportsCountPill">0 Reports</div>
+            </div>
+          </div>
+
+          <!-- Citizen Report Analytics Dashboard (NLP Rule-Based) -->
+          <div class="card nlp-analytics-card" id="nlpAnalyticsDashboard" role="region" aria-label="Citizen report analytics">
+            <div class="nlp-analytics-header">
+              <div class="nlp-analytics-title-group">
+                <h4 class="nlp-analytics-title">Citizen report analytics</h4>
+                <span class="nlp-analytics-sub">Automated keyword screening &bull; Needs human verification</span>
+              </div>
+              <span class="nlp-disclaimer-badge">Demo NLP analysis &bull; Runs in your browser</span>
+            </div>
+
+            <div class="nlp-metrics-row" id="nlpMetricsRow">
+              <div class="nlp-metric-box">
+                <span class="nlp-metric-val" id="nlpTotalReportsVal">0</span>
+                <span class="nlp-metric-lbl">Total reports</span>
+              </div>
+              <div class="nlp-metric-box">
+                <span class="nlp-metric-val" id="nlpTopCategoryVal">None</span>
+                <span class="nlp-metric-lbl">Top category</span>
+              </div>
+              <div class="nlp-metric-box">
+                <span class="nlp-metric-val" id="nlpUrgentCountVal">0</span>
+                <span class="nlp-metric-lbl">Urgent/Critical</span>
+              </div>
+            </div>
+
+            <!-- Category Breakdown Progress Bars -->
+            <div class="nlp-breakdown-container" id="nlpBreakdownContainer">
+              <!-- Dynamically populated category bars -->
+            </div>
+          </div>
+
+          <!-- Reports Listing List -->
+          <div class="reports-list" id="reportsListContainer" role="region" aria-label="Citizen reports feed">
+            <!-- Dynamically populated or empty state -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==============================================
+         TAB 5: PLAN MY DAY
+    =============================================== -->
+    <section class="tab-pane" id="viewPlan" role="tabpanel" aria-labelledby="tabBtnPlan">
+      <div class="plan-day-layout">
+        <!-- Generator Controls Card -->
+        <div class="card plan-controls-card">
+          <div class="plan-header">
+            <div class="plan-icon" aria-hidden="true">🗺️</div>
+            <div>
+              <h2 class="section-title">Rule-Based Day Itinerary Generator</h2>
+              <p class="section-subtitle">Tailor a custom Pune excursion matched to your personal budget and curated interests. Automatically excludes cautionary zones!</p>
+            </div>
+          </div>
+
+          <form id="planDayForm">
+            <!-- Budget per Person -->
+            <div class="form-group">
+              <div class="budget-label-row">
+                <label for="planBudgetSlider" class="form-label">Your Budget (INR per person)</label>
+                <span class="budget-display" id="planBudgetDisplay">₹1,500</span>
+              </div>
+              <input type="range" id="planBudgetSlider" class="range-slider" min="50" max="15000" step="50" value="1500" aria-label="Plan my day budget slider">
+              <div class="budget-range-hints">
+                <span>₹50 (Budget)</span>
+                <span>₹1,500 (Moderate)</span>
+                <span>₹5,000 (Premium)</span>
+                <span>₹15,000 (Luxury)</span>
+              </div>
+            </div>
+
+            <!-- Interest Checkboxes -->
+            <div class="form-group">
+              <span class="form-label">Select Your Interests (at least 1)</span>
+              <div class="interest-checkboxes-grid">
+                <label class="custom-checkbox-card">
+                  <input type="checkbox" name="interest" value="heritage" checked>
+                  <span class="checkbox-indicator"></span>
+                  <div class="checkbox-text">
+                    <span class="cb-title">🏛️ Heritage & History</span>
+                    <span class="cb-desc">Forts, palaces, ancient caves</span>
+                  </div>
+                </label>
+
+                <label class="custom-checkbox-card">
+                  <input type="checkbox" name="interest" value="food" checked>
+                  <span class="checkbox-indicator"></span>
+                  <div class="checkbox-text">
+                    <span class="cb-title">☕ Legendary Food & Cafes</span>
+                    <span class="cb-desc">Iconic Irani cafes, street specialties</span>
+                  </div>
+                </label>
+
+                <label class="custom-checkbox-card">
+                  <input type="checkbox" name="interest" value="attractions" checked>
+                  <span class="checkbox-indicator"></span>
+                  <div class="checkbox-text">
+                    <span class="cb-title">🎨 Attractions & Lakes</span>
+                    <span class="cb-desc">Museums, tranquil birdwatching lakes</span>
+                  </div>
+                </label>
+
+                <label class="custom-checkbox-card">
+                  <input type="checkbox" name="interest" value="hotels">
+                  <span class="checkbox-indicator"></span>
+                  <div class="checkbox-text">
+                    <span class="cb-title">🏨 Hotels & Luxury Lounges</span>
+                    <span class="cb-desc">Fine-dining & boutique stays</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="plan-submit-row">
+              <button type="submit" class="btn btn-primary btn-large" id="generateItineraryBtn">
+                <span>Create Itinerary</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Generated Itinerary Result Card -->
+        <div class="card itinerary-result-card" id="itineraryResultContainer" role="region" aria-label="Generated Itinerary" aria-live="polite">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Social Media City Pulse Modal Dialog -->
+  <div class="social-modal-overlay hidden" id="socialModalOverlay" role="dialog" aria-modal="true" aria-labelledby="socialModalTitle">
+    <div class="social-modal-card card">
+      <div class="social-modal-header">
+        <div>
+          <span class="social-modal-tag">🐦 Live Crowdsourced Insights</span>
+          <h3 class="social-modal-title" id="socialModalTitle">Pune Social Media City Pulse (#PuneLive)</h3>
+          <p class="social-modal-desc">Real-time crowdsourced social reports, Twitter/X posts, and traffic dispatches across Pune.</p>
+        </div>
+        <button type="button" class="close-modal-btn" id="closeSocialModalBtn" aria-label="Close social feed">&times;</button>
+      </div>
+
+      <!-- Social Category Filters -->
+      <div class="social-filters-row">
+        <button type="button" class="pill-btn active" data-social="all">All Buzz (8)</button>
+        <button type="button" class="pill-btn" data-social="traffic">#PuneTraffic</button>
+        <button type="button" class="pill-btn" data-social="weather">#PuneRains</button>
+        <button type="button" class="pill-btn" data-social="food">#FoodCulture</button>
+      </div>
+
+      <!-- Social Posts Feed Container -->
+      <div class="social-posts-container" id="socialPostsContainer">
+        <!-- Dynamically rendered via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer" role="contentinfo">
+    <div class="footer-container">
+      <div class="footer-col">
+        <h4 class="footer-brand">CityPulse Pune</h4>
+        <p class="footer-text">Built for hackathon demonstration. A human-centric prototype for navigating, exploring, and experiencing Pune, Maharashtra.</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-heading">Attributions & Open APIs</h4>
+        <ul class="footer-links">
+          <li>Maps: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap Contributors</a></li>
+          <li>Mapping Library: <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet.js CDN</a></li>
+          <li>Live Weather API: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo API</a> (No API Key)</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-heading">Safety & Accuracy Notice</h4>
+        <p class="footer-text">Safety ratings, accident junction tags, cleanliness indexes, and community submissions are simulated demo samples for research & showcase purposes.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Leaflet CDN JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
